@@ -95,7 +95,7 @@ void autonomous(unsigned long time)
   
   int robotX = 0; // X-axis displacement of the robot from the starting point, in inches
   int robotY = 0; // Y-axis displacement of the robot from the starting point, in inches 
-  int robotAngle = 0; // Rotational displacement of the robot from the starting angle, in degrees
+  RobotDirection robotDirection = N;
   rightEncoder.pos = 0;
   rightEncoder.pinA = 22;
   rightEncoder.pinB = 23;
@@ -109,7 +109,8 @@ void autonomous(unsigned long time)
     delay(20);
   }
 
-
+  driveMotorLeft.write(180);
+  driveMotorRight.write(180);
   time = time * 1000; // converts time from seconds to milliseconds
   while ((millis() - startTime <= time) && (dfw.select())) // compares start time to time entered in the autonomous function and
   {
@@ -122,32 +123,33 @@ void autonomous(unsigned long time)
     switch(point){
       case 0:
         targetLocationX = 0;
-        targetLocationY = 10; // TODO: Update
+        targetLocationY = 39; // TODO: Update
         break;
       case 1:
-        targetLocationX = -7;
-        targetLocationY = 10;
+        targetLocationX = -16;
+        targetLocationY = 39;
         break;
       case 2:
-        targetLocationX = -12;
+        targetLocationX = -52;
         targetLocationY = 10;
         break;
       case 3:
-        targetLocationX = -12;
-        targetLocationY = 15;
+        targetLocationX = -52;
+        targetLocationY = 34;
         break;
     }
     rightEncoder.lastPos = rightEncoder.pos;
     rightEncoder.pos = encoderChange(rightEncoder);
-    distanceTraveled = (CIRCUMFRENCE / 90) * (rightEncoder.pos - rightEncoder.lastPos); // Distance traveled in past increment, in inches
-    switch(RobotDirection){
+    distanceTraveled = (5.65 / 90) * (rightEncoder.pos - rightEncoder.lastPos); // Distance traveled in past increment, in inches
+    // 5.65 is the circumference
+    switch(robotDirection){
       case N:
         robotY += distanceTraveled;
         break;
       case E:
         robotX += distanceTraveled;
         break;
-      case S;
+      case S:
         robotY -= distanceTraveled;
         break;
       case W:
