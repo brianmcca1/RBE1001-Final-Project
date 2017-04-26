@@ -13,8 +13,8 @@
 typedef struct{
   int pos;
   int lastPos;
-  static int pinA;
-  static int pinB;
+  int pinA;
+  int pinB;
   int lastAValue;
 } Encoder;
 
@@ -35,6 +35,7 @@ const int leftDrivePort = 4;
 const int rightDrivePort = 7;
 const int leftSteerPort = 5;
 const int rightSteerPort = 6;
+const int intakeMotorPort = 8;
 Encoder rightEncoder;
 boolean clampDown = false;
 boolean armsUp = false;
@@ -50,12 +51,11 @@ void setup() {
   driveMotorRight.attach(rightDrivePort, 1000, 2000); // right drive motor pin#, pulse time for 0,pulse time for 180
   steerMotorLeft.attach(leftSteerPort, 1000, 2000);
   steerMotorRight.attach(rightSteerPort, 1000, 2000);
-  intakeMotor.attach(8, 1000, 2000);
+  intakeMotor.attach(intakeMotorPort, 1000, 2000);
   pinMode(clamp, OUTPUT);
   pinMode(rightPiston, OUTPUT);
   pinMode(leftPiston, OUTPUT);
-//  pinMode(encoderPinA, INPUT);
- // pinMode(encoderPinB, INPUT);
+
   lcd.begin(16,2);
   lcd.clear();
   
@@ -72,9 +72,9 @@ int encoderChange(Encoder encoder){
     int encoderAVal = digitalRead(encoder.pinA);
     if(encoder.lastAValue == LOW && encoderAVal == HIGH){
       if(digitalRead(encoder.pinB) == LOW){
-        encoder.pos--;
-      } else {
         encoder.pos++;
+      } else {
+        encoder.pos--;
       }
     }
     return encoder.pos;
@@ -93,8 +93,8 @@ void autonomous(unsigned long time)
   // 3: Linear with Ramp
   // 4: On ramp
   
-  int robotX = 0; // X-axis displacement of the robot from the starting point, in inches
-  int robotY = 0; // Y-axis displacement of the robot from the starting point, in inches 
+  float robotX = 0; // X-axis displacement of the robot from the starting point, in inches
+  float robotY = 0; // Y-axis displacement of the robot from the starting point, in inches 
   RobotDirection robotDirection = N;
   rightEncoder.pos = 0;
   rightEncoder.pinA = 22;
@@ -104,22 +104,68 @@ void autonomous(unsigned long time)
   int rightEncoderPosition = 0; // Current rotational position of the right encoder
   int rightEncoderALast = LOW; // The value of encoder pin A last time it was checked
   lcd.print("AUTONOMOUS PHASE");
-  while (dfw.start() == 1) { // waits for start button
-    Serial.println("waiting for start");
-    delay(20);
-  }
 
-  driveMotorLeft.write(180);
-  driveMotorRight.write(180);
+
+  driveMotorLeft.write(125);
+  driveMotorRight.write(45);
+  delay(1000);
+  driveMotorLeft.write(90);
+  driveMotorRight.write(90);
+  steerMotorLeft.write(20);
+  delay(2000);
+  steerMotorLeft.write(90);
+  driveMotorLeft.write(125);
+  driveMotorRight.write(45);
+  delay(3500);
+  driveMotorLeft.write(90);
+  driveMotorRight.write(90);
+  return;
+  /**
+  driveMotorLeft.write(150);
+  driveMotorRight.write(30);
+  delay(1500);
+  driveMotorLeft.write(30);
+  driveMotorRight.write(30);
+  delay(400);
+  driveMotorLeft.write(90);
+  driveMotorRight.write(90);
+  delay(100);
+  driveMotorLeft.write(150);
+  driveMotorRight.write(30);
+  delay(1200);
+  driveMotorLeft.write(90);
+  driveMotorRight.write(90);
+  delay(100);
+  digitalWrite(clamp, HIGH);
+  delay(100);
+  driveMotorLeft.write(150);
+  driveMotorRight.write(30);
+  delay(300);
+  driveMotorLeft.write(150);
+  driveMotorRight.write(150);
+  delay(200);
+  return;
+  
   time = time * 1000; // converts time from seconds to milliseconds
   while ((millis() - startTime <= time) && (dfw.select())) // compares start time to time entered in the autonomous function and
   {
-    int distanceTraveled;
+    
+    float distanceTraveled;
     int targetLocationX; // TODO: Make a struct for points (x, y)
     int targetLocationY;
+    lcd.setCursor(0, 0);
+    /**
+    lcd.print("encoderA: ");
+    lcd.print(digitalRead(rightEncoder.pinA));
     lcd.setCursor(0, 1);
-    lcd.print("Time left: ");
-    lcd.print((time - (millis() - startTime)) / 1000);
+    lcd.print("encoderB: ");
+    lcd.print(digitalRead(rightEncoder.pinB));
+    
+    lcd.print("encoderPos: ");
+    lcd.print(rightEncoder.pos);
+    lcd.setCursor(0, 1);
+    lcd.print("robotY: ");
+    lcd.print(robotY);
     switch(point){
       case 0:
         targetLocationX = 0;
@@ -138,10 +184,10 @@ void autonomous(unsigned long time)
         targetLocationY = 34;
         break;
     }
-    rightEncoder.lastPos = rightEncoder.pos;
+    /**rightEncoder.lastPos = rightEncoder.pos;
     rightEncoder.pos = encoderChange(rightEncoder);
-    distanceTraveled = (5.65 / 90) * (rightEncoder.pos - rightEncoder.lastPos); // Distance traveled in past increment, in inches
-    // 5.65 is the circumference
+    distanceTraveled = (12.6/ 90) * (rightEncoder.pos - rightEncoder.lastPos); // Distance traveled in past increment, in inches
+    // 12.6 is the circumference
     switch(robotDirection){
       case N:
         robotY += distanceTraveled;
@@ -157,17 +203,37 @@ void autonomous(unsigned long time)
         break;
     }
 
-    if(abs(robotX - targetLocationX) < 0.1 && abs(robotY - targetLocationY) < 0.1){
       point++;
       switch(point){
         case 1:
-          /** Turn 90 degrees CCW */
+        driveMotorLeft.write(150);
+        driveMotorRight.write(30);
+        delay(1000);
+        driveMotorLeft.write(30);
+        driveMotorRight.write(150);
+        return;
+          driveMotorLeft.write(90);
+          driveMotorRight.write(90);
+          /** TODO: Turn 90 degrees CCW 
+          driveMotorLeft.write(180);
+          driveMotorRight.write(180);
           break;
         case 2:
-          /** Pick up the pen */
+          // Pick up the pen
+          driveMotorLeft.write(90);
+          driveMotorRight.write(90);
+          delay(100);
+          digitalWrite(clamp, HIGH);
+          delay(100);
+          driveMotorLeft.write(180);
+          driveMotorRight.write(180);
           break;
         case 3:
-          /** Turn 90 degrees CW */
+          driveMotorLeft.write(90);
+          driveMotorRight.write(90);
+          /** TODO: Turn 90 degrees CW 
+          driveMotorLeft.write(180);
+          driveMotorRight.write(180);
           break;
         case 4:
           return;
@@ -182,8 +248,10 @@ void autonomous(unsigned long time)
     
     
     Serial.println("Autonomous"); //prints Autonomous over serial (usb com port)
-    delay(20); //delay to prevent spamming the serial port and to keep servo and dfw libraries happy
+    //delay(10); //delay to prevent spamming the serial port and to keep servo and dfw libraries happy
   }
+  */
+  
 }
 
 /**
@@ -209,27 +277,13 @@ void TeleopDrive()
         break;
     }
     
-    if (dfw.r1())
-    {
-      if(armsUp){
-        digitalWrite(rightPiston, LOW);
-        digitalWrite(leftPiston, LOW);
-        armsUp = false;
-      } else {
+    if (dfw.r1()){
         digitalWrite(rightPiston, HIGH);
         digitalWrite(leftPiston, HIGH);
-        armsUp = true;
-      }
     }
     if (dfw.l1())
     {
-      if(clampDown){
-        digitalWrite(clamp, LOW);
-        clampDown = false;
-      } else {
-        digitalWrite(clamp, HIGH);
-        clampDown = true;
-      }
+      digitalWrite(clamp, HIGH);
     }
     if (dfw.one()){
       intakeState = IN;
@@ -238,7 +292,11 @@ void TeleopDrive()
       intakeState = OUT;
     }
     if(dfw.two()){
-      intakeState = STOP;
+      digitalWrite(rightPiston, LOW);
+      digitalWrite(leftPiston, LOW);
+    }
+    if(dfw.four()){
+      digitalWrite(clamp, LOW);
     }
     
   }
@@ -270,8 +328,9 @@ void teleop(unsigned long time) {
 
 void loop() 
 {
-  // autonomous(0); //time in seconds to run the autonomous code
-  teleop(10000);
+  autonomous(20); //time in seconds to run the autonomous code
+  delay(10000);
+  teleop(120);
   exit(0);
 }
 
