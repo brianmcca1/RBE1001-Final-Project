@@ -27,15 +27,17 @@ Servo driveMotorRight; // Servo object
 Servo steerMotorLeft;
 Servo steerMotorRight;
 Servo intakeMotor;
-const int clamp = 22; // TODO: CHANGE
-const int rightPiston = 23; // TODO: CHANGE
-const int leftPiston = 24; // TODO CHANGE
+const int clamp = 29; // TODO: CHANGE
+const int rightPiston = 28; // TODO: CHANGE
+const int leftPiston = 27; // TODO CHANGE
 const int leftDrivePort = 4;
 const int rightDrivePort = 7;
 const int leftSteerPort = 5;
 const int rightSteerPort = 6;
 Encoder rightEncoder;
 Encoder leftEncoder;
+boolean clampDown = false;
+boolean armsUp = false;
 
 IntakeState intakeState = OUT;
 
@@ -147,29 +149,34 @@ void TeleopDrive()
         intakeMotor.write(180);
         break;
     }
+    
     if (dfw.r1())
     {
-      digitalWrite(clamp, HIGH);
+      if(armsUp){
+        digitalWrite(rightPiston, LOW);
+        digitalWrite(leftPiston, LOW);
+        armsUp = false;
+      } else {
+        digitalWrite(rightPiston, HIGH);
+        digitalWrite(leftPiston, HIGH);
+        armsUp = true;
+      }
     }
     if (dfw.l1())
     {
-      digitalWrite(clamp, LOW);
-    }
-    if (dfw.r2());
-    {
-      digitalWrite(rightPiston, HIGH);
-      digitalWrite(leftPiston, HIGH);
-    }
-    if (dfw.l2());
-    {
-      digitalWrite(rightPiston, LOW);
-      digitalWrite(leftPiston, LOW);
+      if(clampDown){
+        digitalWrite(clamp, LOW);
+        clampDown = false;
+      } else {
+        digitalWrite(clamp, HIGH);
+        clampDown = true;
+      }
     }
     if (dfw.one()){
-      intakeState = OUT;
+      intakeState = IN;
     }
     if(dfw.three()){
-      intakeState = IN;
+      intakeState = OUT;
     }
     if(dfw.two()){
       intakeState = STOP;
