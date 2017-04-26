@@ -21,20 +21,25 @@ Servo intakeMotor;
 const int clamp = 22;
 const int rightPiston = 23;
 const int leftPiston = 24;
-LiquidCrystal lcd(12,11,5,4,3,2);
+const int leftDrivePort = 4;
+const int rightDrivePort = 7;
+const int leftSteerPort = 5;
+const int rightSteerPort = 6;
+
+LiquidCrystal lcd(40, 41, 42, 43, 44, 45);
 
 void setup() {
   Serial.begin(9600); // Serial output begin. Only needed for debug
   dfw.begin(); // Serial1 output begin for DFW library. Buad and port #."Serial1 only"
-  driveMotorLeft.attach(4, 1000, 2000); // left drive motor pin#, pulse time for 0,pulse time for 180
-  driveMotorRight.attach(7, 1000, 2000); // right drive motor pin#, pulse time for 0,pulse time for 180
-  steerMotorLeft.attach(5, 1000, 2000);
-  steerMotorRight.attach(6, 1000, 2000);
+  driveMotorLeft.attach(leftDrivePort, 1000, 2000); // left drive motor pin#, pulse time for 0,pulse time for 180
+  driveMotorRight.attach(rightDrivePort, 1000, 2000); // right drive motor pin#, pulse time for 0,pulse time for 180
+  steerMotorLeft.attach(leftSteerPort, 1000, 2000);
+  steerMotorRight.attach(rightSteerPort, 1000, 2000);
   intakeMotor.attach(8, 1000, 2000);
   pinMode(clamp, OUTPUT);
   pinMode(rightPiston, OUTPUT);
   pinMode(leftPiston, OUTPUT);
-  lcd.begin(16,1);
+  lcd.begin(16,2);
   lcd.clear();
   
   //Serial.println("start");
@@ -62,6 +67,8 @@ void autonomous(volatile unsigned long time)
   time = time * 1000; // converts time from seconds to milliseconds
   while ((millis() - startTime <= time) && (dfw.select())) // compares start time to time entered in the autonomous function and
   {
+    lcd.setCursor(0, 1);
+    lcd.print((millis() - startTime) / 1000);
     // The select button can be used to skip the autonomous code.
     // Enter Autonomous User Code Here
     Serial.println("Autonomous"); //prints Autonomous over serial (usb com port)
@@ -114,11 +121,14 @@ void TeleopDrive()
  */
 void teleop(unsigned long time) { 
   lcd.clear();
-  lcd.print("TELEOP PHASE");
+  lcd.setCursor(0, 0);
+  lcd.print("TELE-OP PHASE");
   unsigned long startTime = millis(); // sets start time of teleop
   time = time * 1000; // converts time from seconds to milliseconds
   while (millis() - startTime <= time) // compares start time to time entered in the teleop function
   {
+    lcd.setCursor(0, 1);
+    lcd.print((millis() - startTime) / 1000);
     TeleopDrive();
     delay(20); // Servos do not like to be called faster than every 20 ms. Also the Serial data is sent every 15ms
 
