@@ -10,6 +10,14 @@
 #include <Servo.h> // servo library
 #include <LiquidCrystal.h>
 
+typedef struct{
+  int pos;
+  static int pinA;
+  static int pinB;
+  int lastAValue;
+} Encoder;
+
+
 enum IntakeState {IN, STOP, OUT};
 int ledpindebug = 13; //Wireless controller Debug pin. If lit then there is no communication.
 
@@ -26,10 +34,9 @@ const int leftDrivePort = 4;
 const int rightDrivePort = 7;
 const int leftSteerPort = 5;
 const int rightSteerPort = 6;
-const int rightEncoderPinA = 22; // TODO: Change to whatever this actually is
-const int rightEncoderPinB = 23;
-const int leftEncoderPinA = 12;
-const int leftEncoderPinB = 13;
+Encoder rightEncoder;
+Encoder leftEncoder;
+
 IntakeState intakeState = OUT;
 
 LiquidCrystal lcd(40, 41, 42, 43, 44, 45);
@@ -59,8 +66,16 @@ void setup() {
   }
 }
 
-int encoderChange(int encoderPosition, int encoderPinA, int encoderPinB){
-  
+int encoderChange(Encoder encoder){
+    int encoderAVal = digitalRead(encoder.pinA);
+    if(encoder.lastAValue == LOW && encoderAVal == HIGH){
+      if(digitalRead(encoder.pinB) == LOW){
+        encoder.pos--;
+      } else {
+        encoder.pos++;
+      }
+    }
+    return encoder.pos;
 }
 /**
  * Handles the autonomous operation of the robot.
@@ -71,11 +86,18 @@ void autonomous(unsigned long time)
   int robotX = 0; // X-axis displacement of the robot from the starting point, in inches
   int robotY = 0; // Y-axis displacement of the robot from the starting point, in inches 
   int robotAngle = 0; // Rotational displacement of the robot from the starting angle, in degrees
+  rightEncoder.pos = 0;
+  rightEncoder.pinA = 22;
+  rightEncoder.pinB = 23;
+  leftEncoder.pos = 0;
+  leftEncoder.pinA = 12;
+  leftEncoder.pinB = 13;
   unsigned long startTime = millis(); // sets start time of autonomous
   
   int rightEncoderPosition = 0; // Current rotational position of the right encoder
   int leftEncoderPosition = 0; // Current rotational position of the left encoder
-  int encoderALast = LOW; // The value of encoder pin A last time it was checked
+  int rightEncoderALast = LOW; // The value of encoder pin A last time it was checked
+  
   lcd.print("AUTONOMOUS PHASE");
   while (dfw.start() == 1) { // waits for start button
     Serial.println("waiting for start");
@@ -89,17 +111,11 @@ void autonomous(unsigned long time)
     lcd.setCursor(0, 1);
     lcd.print("Time left: ");
     lcd.print((time - (millis() - startTime)) / 1000);
-    /**
-    int rightEncoderAVal = digitalRead(encoderPinA);
-    if(encoderALast == LOW && encoderAVal == HIGH){
-      if(digitalRead(encoderPinB) == LOW){
-        encoderPosition--;
-      } else {
-        encoderPosition++;
-      }
-    }
-    encoderALast = encoderAVal;
-    */
+    
+    rightEncoder.pos = encoderChange(rightEncoder);
+    leftEncoder.pos = encoderChange(leftEncoder);
+    rightEncoder.lastAValue = digitalRead(rightEncoder.pinA);
+    leftEncoder.lastAValue = digitalRead(leftEncoder.pinA);
     
     // The select button can be used to skip the autonomous code.
     // Enter Autonomous User Code Here
