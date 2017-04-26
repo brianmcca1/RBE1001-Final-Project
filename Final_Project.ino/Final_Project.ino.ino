@@ -8,6 +8,7 @@
 
 #include <DFW.h> // DFW include
 #include <Servo.h> // servo library
+#include <LiquidCrystal.h>
 
 int ledpindebug = 13; //Wireless controller Debug pin. If lit then there is no communication.
 
@@ -20,6 +21,7 @@ Servo intakeMotor;
 const int clamp = 22;
 const int rightPiston = 23;
 const int leftPiston = 24;
+LiquidCrystal lcd(12,11,5,4,3,2);
 
 void setup() {
   Serial.begin(9600); // Serial output begin. Only needed for debug
@@ -32,6 +34,8 @@ void setup() {
   pinMode(clamp, OUTPUT);
   pinMode(rightPiston, OUTPUT);
   pinMode(leftPiston, OUTPUT);
+  lcd.begin(16,1);
+  lcd.clear();
   
   //Serial.println("start");
 
@@ -48,6 +52,7 @@ void setup() {
  */
 void autonomous(volatile unsigned long time)
 {
+  lcd.print("AUTONOMOUS PHASE");
   while (dfw.start() == 1) { // waits for start button
     Serial.println("waiting for start");
     delay(20);
@@ -108,6 +113,8 @@ void TeleopDrive()
  * @param time The length of time that the robot should receive input, in seconds
  */
 void teleop(unsigned long time) { 
+  lcd.clear();
+  lcd.print("TELEOP PHASE");
   unsigned long startTime = millis(); // sets start time of teleop
   time = time * 1000; // converts time from seconds to milliseconds
   while (millis() - startTime <= time) // compares start time to time entered in the teleop function
