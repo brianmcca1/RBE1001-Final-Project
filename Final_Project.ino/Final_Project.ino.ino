@@ -12,12 +12,13 @@
 
 typedef struct{
   int pos;
+  int lastPos;
   static int pinA;
   static int pinB;
   int lastAValue;
 } Encoder;
 
-
+enum RobotDirection {N, S, E, W};
 enum IntakeState {IN, STOP, OUT};
 int ledpindebug = 13; //Wireless controller Debug pin. If lit then there is no communication.
 
@@ -27,19 +28,18 @@ Servo driveMotorRight; // Servo object
 Servo steerMotorLeft;
 Servo steerMotorRight;
 Servo intakeMotor;
-const int clamp = 29; // TODO: CHANGE
-const int rightPiston = 28; // TODO: CHANGE
-const int leftPiston = 27; // TODO CHANGE
+const int clamp = 29; 
+const int rightPiston = 28; 
+const int leftPiston = 27; 
 const int leftDrivePort = 4;
 const int rightDrivePort = 7;
 const int leftSteerPort = 5;
 const int rightSteerPort = 6;
 Encoder rightEncoder;
-Encoder leftEncoder;
 boolean clampDown = false;
 boolean armsUp = false;
 
-IntakeState intakeState = OUT;
+IntakeState intakeState = STOP;
 
 LiquidCrystal lcd(40, 41, 42, 43, 44, 45);
 
@@ -85,21 +85,24 @@ int encoderChange(Encoder encoder){
  */
 void autonomous(unsigned long time)
 {
+  int point = 0;
+  // Points:
+  // 0: Starting position
+  // 1: Parallel with Pen
+  // 2: Adjacent to Pen
+  // 3: Linear with Ramp
+  // 4: On ramp
+  
   int robotX = 0; // X-axis displacement of the robot from the starting point, in inches
   int robotY = 0; // Y-axis displacement of the robot from the starting point, in inches 
   int robotAngle = 0; // Rotational displacement of the robot from the starting angle, in degrees
   rightEncoder.pos = 0;
   rightEncoder.pinA = 22;
   rightEncoder.pinB = 23;
-  leftEncoder.pos = 0;
-  leftEncoder.pinA = 12;
-  leftEncoder.pinB = 13;
   unsigned long startTime = millis(); // sets start time of autonomous
   
   int rightEncoderPosition = 0; // Current rotational position of the right encoder
-  int leftEncoderPosition = 0; // Current rotational position of the left encoder
   int rightEncoderALast = LOW; // The value of encoder pin A last time it was checked
-  
   lcd.print("AUTONOMOUS PHASE");
   while (dfw.start() == 1) { // waits for start button
     Serial.println("waiting for start");
@@ -110,17 +113,71 @@ void autonomous(unsigned long time)
   time = time * 1000; // converts time from seconds to milliseconds
   while ((millis() - startTime <= time) && (dfw.select())) // compares start time to time entered in the autonomous function and
   {
+    int distanceTraveled;
+    int targetLocationX; // TODO: Make a struct for points (x, y)
+    int targetLocationY;
     lcd.setCursor(0, 1);
     lcd.print("Time left: ");
     lcd.print((time - (millis() - startTime)) / 1000);
-    
+    switch(point){
+      case 0:
+        targetLocationX = 0;
+        targetLocationY = 10; // TODO: Update
+        break;
+      case 1:
+        targetLocationX = -7;
+        targetLocationY = 10;
+        break;
+      case 2:
+        targetLocationX = -12;
+        targetLocationY = 10;
+        break;
+      case 3:
+        targetLocationX = -12;
+        targetLocationY = 15;
+        break;
+    }
+    rightEncoder.lastPos = rightEncoder.pos;
     rightEncoder.pos = encoderChange(rightEncoder);
-    leftEncoder.pos = encoderChange(leftEncoder);
+    distanceTraveled = (CIRCUMFRENCE / 90) * (rightEncoder.pos - rightEncoder.lastPos); // Distance traveled in past increment, in inches
+    switch(RobotDirection){
+      case N:
+        robotY += distanceTraveled;
+        break;
+      case E:
+        robotX += distanceTraveled;
+        break;
+      case S;
+        robotY -= distanceTraveled;
+        break;
+      case W:
+        robotX -= distanceTraveled;
+        break;
+    }
+
+    if(abs(robotX - targetLocationX) < 0.1 && abs(robotY - targetLocationY) < 0.1){
+      point++;
+      switch(point){
+        case 1:
+          /** Turn 90 degrees CCW */
+          break;
+        case 2:
+          /** Pick up the pen */
+          break;
+        case 3:
+          /** Turn 90 degrees CW */
+          break;
+        case 4:
+          return;
+      }
+    }
+
+    
     rightEncoder.lastAValue = digitalRead(rightEncoder.pinA);
-    leftEncoder.lastAValue = digitalRead(leftEncoder.pinA);
     
     // The select button can be used to skip the autonomous code.
     // Enter Autonomous User Code Here
+    
     
     Serial.println("Autonomous"); //prints Autonomous over serial (usb com port)
     delay(20); //delay to prevent spamming the serial port and to keep servo and dfw libraries happy
