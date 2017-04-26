@@ -12,10 +12,10 @@
 int ledpindebug = 13; //Wireless controller Debug pin. If lit then there is no communication.
 
 DFW dfw(ledpindebug);  // Instantiates the DFW object and setting the debug pin. The debug pin will be set high if no communication is seen after 2 seconds
-Servo driveMotorA; // Servo object
-Servo driveMotorB; // Servo object
-Servo steerMotorA;
-Servo steerMotorB;
+Servo driveMotorLeft; // Servo object
+Servo driveMotorRight; // Servo object
+Servo steerMotorLeft;
+Servo steerMotorRight;
 Servo intakeMotor;
 const int clamp = 22;
 const int rightPiston = 23;
@@ -24,10 +24,10 @@ const int leftPiston = 24;
 void setup() {
   Serial.begin(9600); // Serial output begin. Only needed for debug
   dfw.begin(); // Serial1 output begin for DFW library. Buad and port #."Serial1 only"
-  driveMotorA.attach(4, 1000, 2000); // left drive motor pin#, pulse time for 0,pulse time for 180
-  driveMotorB.attach(7, 1000, 2000); // right drive motor pin#, pulse time for 0,pulse time for 180
-  steerMotorA.attach(5, 1000, 2000);
-  steerMotorB.attach(6, 1000, 2000);
+  driveMotorLeft.attach(4, 1000, 2000); // left drive motor pin#, pulse time for 0,pulse time for 180
+  driveMotorRight.attach(7, 1000, 2000); // right drive motor pin#, pulse time for 0,pulse time for 180
+  steerMotorLeft.attach(5, 1000, 2000);
+  steerMotorRight.attach(6, 1000, 2000);
   intakeMotor.attach(8, 1000, 2000);
   pinMode(clamp, OUTPUT);
   pinMode(rightPiston, OUTPUT);
@@ -44,7 +44,7 @@ void setup() {
 
 /**
  * Handles the autonomous operation of the robot.
- * @param time the length of time that the robot should operate autonomously, in seconds
+ * @param time The length of time that the robot should operate autonomously, in seconds
  */
 void autonomous(volatile unsigned long time)
 {
@@ -71,10 +71,10 @@ void TeleopDrive()
 {
   dfw.run(); // Called to update the controllers output. Do not call faster than every 15ms.
   if(dfw.getCompetitionState() != powerup){
-    driveMotorA.write(dfw.joysticklv());
-    driveMotorB.write(180 - dfw.joysticklv());
-    steerMotorA.write(180 - dfw.joystickrh());
-    steerMotorB.write(dfw.joystickrh());
+    driveMotorLeft.write(dfw.joysticklv());
+    driveMotorRight.write(180 - dfw.joysticklv());
+    steerMotorLeft.write(180 - dfw.joystickrh());
+    steerMotorRight.write(dfw.joystickrh());
     intakeMotor.write(0);
     if (dfw.one())
     {
@@ -105,7 +105,7 @@ void TeleopDrive()
 
 /**
  * Hands the Tele-operation of the robot
- * @param time the length of time that the robot should receive input, in seconds
+ * @param time The length of time that the robot should receive input, in seconds
  */
 void teleop(unsigned long time) { 
   unsigned long startTime = millis(); // sets start time of teleop
